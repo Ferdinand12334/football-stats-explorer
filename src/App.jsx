@@ -82,6 +82,7 @@ export default function App() {
     <div className="app">
       <header className="header">
         <div className="header-inner">
+          <img src="/logo.png" alt="CLARCK logo" className="brand-logo" />
           <span className="eyebrow">Matchday Data Programme</span>
           <h1>Football Stats Explorer</h1>
           <p className="subtitle">2025–26 Season · Premier League · La Liga · Bundesliga · Serie A · Ligue 1</p>
