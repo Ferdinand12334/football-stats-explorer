@@ -370,3 +370,17 @@ td:first-child, td:nth-child(2), td:nth-child(3) {
   .header-stats { gap: 18px; }
   .stat-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+.footer {
+  text-align: center;
+  padding: 24px 0 8px;
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.footer-name {
+  color: var(--pitch-700);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}

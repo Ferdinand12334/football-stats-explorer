@@ -162,6 +162,10 @@ export default function App() {
         )}
       </div>
 
+      <footer className="footer">
+        Built by <span className="footer-name">CLARCK</span> · Data: FBref, 2025–26 season
+      </footer>
+
       {selectedPlayer && (
         <div className="modal-backdrop" onClick={() => setSelectedPlayer(null)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
