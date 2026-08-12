@@ -16,6 +16,36 @@ const STAT_COLUMNS = [
   { key: 'Age', label: 'Age' },
 ];
 
+const CLUB_STAT_COLUMNS = [
+  { key: 'players', label: 'Squad Size' },
+  { key: 'goals', label: 'Total Goals' },
+  { key: 'assists', label: 'Total Assists' },
+  { key: 'avgAge', label: 'Avg Age' },
+  { key: 'yellow', label: 'Yellow Cards' },
+  { key: 'red', label: 'Red Cards' },
+];
+
+function buildClubStandings(players) {
+  const map = {};
+  for (const p of players) {
+    const key = `${p.Squad}__${p.Comp}`;
+    if (!map[key]) {
+      map[key] = { Squad: p.Squad, Comp: p.Comp, players: 0, goals: 0, assists: 0, ageSum: 0, yellow: 0, red: 0 };
+    }
+    const c = map[key];
+    c.players += 1;
+    c.goals += p.Goals || 0;
+    c.assists += p.Assists || 0;
+    c.ageSum += p.Age || 0;
+    c.yellow += p.CrdY || 0;
+    c.red += p.CrdR || 0;
+  }
+  return Object.values(map).map(c => ({
+    ...c,
+    avgAge: c.players ? Math.round((c.ageSum / c.players) * 10) / 10 : 0,
+  }));
+}
+
 function uniqueSorted(arr) {
   return [...new Set(arr)].filter(Boolean).sort();
 }
@@ -41,6 +71,10 @@ export default function App() {
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [compareList, setCompareList] = useState([]);
   const [showCompare, setShowCompare] = useState(false);
+  const [view, setView] = useState('players'); // 'players' | 'clubs'
+  const [clubSortKey, setClubSortKey] = useState('goals');
+  const [clubSortDir, setClubSortDir] = useState('desc');
+  const [clubLeague, setClubLeague] = useState('All');
 
   const leagues = useMemo(() => uniqueSorted(players.map(p => p.Comp)), []);
   const positions = useMemo(() => uniqueSorted(players.map(p => p.Pos)), []);
@@ -93,6 +127,31 @@ export default function App() {
   const isComparing = player =>
     compareList.some(p => p.Player === player.Player && p.Squad === player.Squad);
 
+  const clubStandings = useMemo(() => buildClubStandings(players), []);
+
+  const filteredClubs = useMemo(() => {
+    let result = clubStandings;
+    if (clubLeague !== 'All') result = result.filter(c => c.Comp === clubLeague);
+    result = [...result].sort((a, b) => {
+      const av = a[clubSortKey];
+      const bv = b[clubSortKey];
+      if (typeof av === 'string') {
+        return clubSortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+      }
+      return clubSortDir === 'asc' ? av - bv : bv - av;
+    });
+    return result;
+  }, [clubStandings, clubLeague, clubSortKey, clubSortDir]);
+
+  const handleClubSort = key => {
+    if (clubSortKey === key) {
+      setClubSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setClubSortKey(key);
+      setClubSortDir('desc');
+    }
+  };
+
   return (
     <div className="app">
       <header className="header">
@@ -118,6 +177,13 @@ export default function App() {
         </div>
       </header>
 
+      <div className="view-tabs">
+        <button className={`view-tab ${view === 'players' ? 'active' : ''}`} onClick={() => setView('players')}>Players</button>
+        <button className={`view-tab ${view === 'clubs' ? 'active' : ''}`} onClick={() => setView('clubs')}>Clubs</button>
+      </div>
+
+      {view === 'players' && (
+      <>
       <div className="controls">
         <input
           className="search"
@@ -186,6 +252,54 @@ export default function App() {
           <p className="truncated-note">Showing first 200 of {filtered.length.toLocaleString()} — narrow your search to see more.</p>
         )}
       </div>
+      </>
+      )}
+
+      {view === 'clubs' && (
+      <>
+      <div className="controls">
+        <select value={clubLeague} onChange={e => setClubLeague(e.target.value)}>
+          <option value="All">All Leagues</option>
+          {leagues.map(l => (
+            <option key={l} value={l}>{l}</option>
+          ))}
+        </select>
+      </div>
+
+      <p className="result-count">{filteredClubs.length.toLocaleString()} clubs found</p>
+
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th className="sticky-col" onClick={() => handleClubSort('Squad')}>
+                Club {clubSortKey === 'Squad' && (clubSortDir === 'asc' ? '▲' : '▼')}
+              </th>
+              <th onClick={() => handleClubSort('Comp')}>
+                League {clubSortKey === 'Comp' && (clubSortDir === 'asc' ? '▲' : '▼')}
+              </th>
+              {CLUB_STAT_COLUMNS.map(col => (
+                <th key={col.key} onClick={() => handleClubSort(col.key)}>
+                  {col.label} {clubSortKey === col.key && (clubSortDir === 'asc' ? '▲' : '▼')}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filteredClubs.map((c, i) => (
+              <tr key={i} className="row">
+                <td className="sticky-col player-name">{c.Squad}</td>
+                <td>{c.Comp}</td>
+                {CLUB_STAT_COLUMNS.map(col => (
+                  <td key={col.key}>{c[col.key]}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      </>
+      )}
 
       <footer className="footer">
         Built by <span className="footer-name">CLARCK</span> · Data: FBref, 2025–26 season
