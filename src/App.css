@@ -14,6 +14,14 @@
   --line: #ddd6c4;
 }
 
+body.dark {
+  --paper: #12160f;
+  --paper-card: #1a2018;
+  --ink: #f2efe6;
+  --ink-soft: #a9b0a3;
+  --line: #333a2f;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -23,6 +31,7 @@ body {
   background: var(--paper);
   color: var(--ink);
   font-family: 'Work Sans', -apple-system, sans-serif;
+  transition: background 0.15s, color 0.15s;
 }
 
 .app {
@@ -45,6 +54,26 @@ body {
     );
   padding: 36px 20px 30px;
   border-bottom: 4px solid var(--amber);
+  position: relative;
+}
+
+.theme-toggle {
+  position: absolute;
+  top: 14px;
+  right: 20px;
+  background: rgba(13, 40, 24, 0.55);
+  border: 1px solid rgba(247, 244, 236, 0.25);
+  color: var(--paper);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.theme-toggle:hover {
+  background: rgba(13, 40, 24, 0.8);
 }
 
 .header-inner {
@@ -360,6 +389,43 @@ td:first-child, td:nth-child(2), td:nth-child(3) {
   font-size: 12px;
   font-family: 'Space Mono', monospace;
   margin: 0;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 14px 12px;
+}
+
+.pagination button {
+  padding: 7px 16px;
+  border-radius: 6px;
+  border: 1.5px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Work Sans', sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.pagination button:hover:not(:disabled) {
+  border-color: var(--pitch-700);
+  color: var(--pitch-700);
+}
+
+.pagination button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pagination-info {
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  color: var(--ink-soft);
+  white-space: nowrap;
 }
 
 /* Position badges — color encodes role on pitch */

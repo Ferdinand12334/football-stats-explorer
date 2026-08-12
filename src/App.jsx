@@ -1,9 +1,17 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts';
 import players from './players.json';
 import './App.css';
+
+function getInitialTheme() {
+  try {
+    const saved = localStorage.getItem('fb-stats-theme');
+    if (saved === 'light' || saved === 'dark') return saved;
+  } catch (e) { /* localStorage unavailable, fall through to default */ }
+  return 'light';
+}
 
 const STAT_COLUMNS = [
   { key: 'Goals', label: 'Goals' },
@@ -84,6 +92,16 @@ export default function App() {
   const [clubChartStat, setClubChartStat] = useState('goals');
   const [favorites, setFavorites] = useState([]);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 50;
+  const [theme, setTheme] = useState(getInitialTheme);
+
+  useEffect(() => {
+    document.body.classList.toggle('dark', theme === 'dark');
+    try {
+      localStorage.setItem('fb-stats-theme', theme);
+    } catch (e) { /* ignore if storage unavailable */ }
+  }, [theme]);
 
   const leagues = useMemo(() => uniqueSorted(players.map(p => p.Comp)), []);
   const positions = useMemo(() => uniqueSorted(players.map(p => p.Pos)), []);
@@ -114,6 +132,18 @@ export default function App() {
 
     return result;
   }, [search, league, position, sortKey, sortDir, favoritesOnly, favorites]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = useMemo(
+    () => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [filtered, page]
+  );
+
+  // Jump back to page 1 whenever the search/filter criteria change, so the
+  // user isn't left staring at an empty page from a stale filter state.
+  useEffect(() => {
+    setPage(1);
+  }, [search, league, position, favoritesOnly]);
 
   const handleSort = key => {
     if (sortKey === key) {
@@ -200,9 +230,20 @@ export default function App() {
     );
   }
 
+  const chartGridStroke = theme === 'dark' ? 'rgba(247,244,236,0.12)' : '#ddd6c4';
+  const chartTickFill = theme === 'dark' ? '#c9cfc2' : '#5b6259';
+  const chartLabelFill = theme === 'dark' ? '#f2efe6' : '#16201a';
+
   return (
     <div className="app">
       <header className="header">
+        <button
+          className="theme-toggle"
+          onClick={() => setTheme(t => (t === 'dark' ? 'light' : 'dark'))}
+          aria-label="Toggle dark mode"
+        >
+          {theme === 'dark' ? '☀️ Light' : '🌙 Dark'}
+        </button>
         <div className="header-inner">
           <img src="/logo.png" alt="CLARCK logo" className="brand-logo" />
           <span className="eyebrow">Matchday Data Programme</span>
@@ -280,9 +321,9 @@ export default function App() {
           </div>
           <ResponsiveContainer width="100%" height={360}>
             <BarChart data={topScorersChartData} layout="vertical" margin={{ left: 10, right: 24, top: 4, bottom: 4 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#ddd6c4" horizontal={false} />
-              <XAxis type="number" tick={{ fontFamily: 'Space Mono, monospace', fontSize: 11, fill: '#5b6259' }} />
-              <YAxis type="category" dataKey="name" width={130} tick={{ fontFamily: 'Work Sans, sans-serif', fontSize: 12, fill: '#16201a' }} />
+              <CartesianGrid strokeDasharray="3 3" stroke={chartGridStroke} horizontal={false} />
+              <XAxis type="number" tick={{ fontFamily: 'Space Mono, monospace', fontSize: 11, fill: chartTickFill }} />
+              <YAxis type="category" dataKey="name" width={130} tick={{ fontFamily: 'Work Sans, sans-serif', fontSize: 12, fill: chartLabelFill }} />
               <Tooltip content={<ChartTooltip unit={STAT_COLUMNS.find(c => c.key === chartStat)?.label.toLowerCase()} />} cursor={{ fill: 'rgba(27,67,50,0.08)' }} />
               <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                 {topScorersChartData.map((entry, idx) => (
@@ -315,7 +356,7 @@ export default function App() {
             </tr>
           </thead>
           <tbody>
-            {filtered.slice(0, 200).map((p, i) => (
+            {paginated.map((p, i) => (
               <tr key={i} onClick={() => setSelectedPlayer(p)} className="row">
                 <td className="checkbox-col" onClick={e => e.stopPropagation()}>
                   <input
@@ -339,8 +380,12 @@ export default function App() {
             ))}
           </tbody>
         </table>
-        {filtered.length > 200 && (
-          <p className="truncated-note">Showing first 200 of {filtered.length.toLocaleString()} — narrow your search to see more.</p>
+        {filtered.length > 0 && (
+          <div className="pagination">
+            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>‹ Prev</button>
+            <span className="pagination-info">Page {page} of {totalPages} · {filtered.length.toLocaleString()} players</span>
+            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>Next ›</button>
+          </div>
         )}
       </div>
       )}
@@ -377,9 +422,9 @@ export default function App() {
           </div>
           <ResponsiveContainer width="100%" height={360}>
             <BarChart data={topClubsChartData} layout="vertical" margin={{ left: 10, right: 24, top: 4, bottom: 4 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#ddd6c4" horizontal={false} />
-              <XAxis type="number" tick={{ fontFamily: 'Space Mono, monospace', fontSize: 11, fill: '#5b6259' }} />
-              <YAxis type="category" dataKey="name" width={140} tick={{ fontFamily: 'Work Sans, sans-serif', fontSize: 12, fill: '#16201a' }} />
+              <CartesianGrid strokeDasharray="3 3" stroke={chartGridStroke} horizontal={false} />
+              <XAxis type="number" tick={{ fontFamily: 'Space Mono, monospace', fontSize: 11, fill: chartTickFill }} />
+              <YAxis type="category" dataKey="name" width={140} tick={{ fontFamily: 'Work Sans, sans-serif', fontSize: 12, fill: chartLabelFill }} />
               <Tooltip content={<ChartTooltip unit={CLUB_STAT_COLUMNS.find(c => c.key === clubChartStat)?.label.toLowerCase()} />} cursor={{ fill: 'rgba(27,67,50,0.08)' }} />
               <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                 {topClubsChartData.map((entry, idx) => (
