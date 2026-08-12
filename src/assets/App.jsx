@@ -1,4 +1,7 @@
 import { useState, useMemo } from 'react';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
+} from 'recharts';
 import players from './players.json';
 import './App.css';
 
@@ -75,6 +78,8 @@ export default function App() {
   const [clubSortKey, setClubSortKey] = useState('goals');
   const [clubSortDir, setClubSortDir] = useState('desc');
   const [clubLeague, setClubLeague] = useState('All');
+  const [playersMode, setPlayersMode] = useState('table'); // 'table' | 'chart'
+  const [clubsMode, setClubsMode] = useState('table');
 
   const leagues = useMemo(() => uniqueSorted(players.map(p => p.Comp)), []);
   const positions = useMemo(() => uniqueSorted(players.map(p => p.Pos)), []);
@@ -152,6 +157,34 @@ export default function App() {
     }
   };
 
+  // Top 10 by Goals within the current player filters, for the chart view.
+  const topScorersChartData = useMemo(() => {
+    return [...filtered]
+      .sort((a, b) => b.Goals - a.Goals)
+      .slice(0, 10)
+      .map(p => ({ name: p.Player, value: p.Goals, pos: p.Pos }))
+      .reverse(); // so highest ends up at top of horizontal bar chart
+  }, [filtered]);
+
+  // Top 10 clubs by total goals within the current club filter, for the chart view.
+  const topClubsChartData = useMemo(() => {
+    return [...filteredClubs]
+      .sort((a, b) => b.goals - a.goals)
+      .slice(0, 10)
+      .map(c => ({ name: c.Squad, value: c.goals }))
+      .reverse();
+  }, [filteredClubs]);
+
+  function ChartTooltip({ active, payload, label, unit }) {
+    if (!active || !payload || !payload.length) return null;
+    return (
+      <div className="chart-tooltip">
+        <div className="chart-tooltip-name">{label}</div>
+        <div className="chart-tooltip-value">{payload[0].value} {unit}</div>
+      </div>
+    );
+  }
+
   return (
     <div className="app">
       <header className="header">
@@ -208,6 +241,31 @@ export default function App() {
 
       <p className="result-count">{filtered.length.toLocaleString()} players found</p>
 
+      <div className="mode-toggle">
+        <button className={`mode-btn ${playersMode === 'table' ? 'active' : ''}`} onClick={() => setPlayersMode('table')}>Table</button>
+        <button className={`mode-btn ${playersMode === 'chart' ? 'active' : ''}`} onClick={() => setPlayersMode('chart')}>Chart</button>
+      </div>
+
+      {playersMode === 'chart' && (
+        <div className="chart-card">
+          <h3 className="chart-title">Top 10 Scorers {league !== 'All' ? `· ${league}` : ''}{position !== 'All' ? ` · ${position}` : ''}</h3>
+          <ResponsiveContainer width="100%" height={360}>
+            <BarChart data={topScorersChartData} layout="vertical" margin={{ left: 10, right: 24, top: 4, bottom: 4 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#ddd6c4" horizontal={false} />
+              <XAxis type="number" tick={{ fontFamily: 'Space Mono, monospace', fontSize: 11, fill: '#5b6259' }} />
+              <YAxis type="category" dataKey="name" width={130} tick={{ fontFamily: 'Work Sans, sans-serif', fontSize: 12, fill: '#16201a' }} />
+              <Tooltip content={<ChartTooltip unit="goals" />} cursor={{ fill: 'rgba(27,67,50,0.08)' }} />
+              <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                {topScorersChartData.map((entry, idx) => (
+                  <Cell key={idx} fill={idx === topScorersChartData.length - 1 ? '#e8a13a' : '#2d6a4f'} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {playersMode === 'table' && (
       <div className="table-wrap">
         <table>
           <thead>
@@ -252,6 +310,7 @@ export default function App() {
           <p className="truncated-note">Showing first 200 of {filtered.length.toLocaleString()} — narrow your search to see more.</p>
         )}
       </div>
+      )}
       </>
       )}
 
@@ -268,6 +327,31 @@ export default function App() {
 
       <p className="result-count">{filteredClubs.length.toLocaleString()} clubs found</p>
 
+      <div className="mode-toggle">
+        <button className={`mode-btn ${clubsMode === 'table' ? 'active' : ''}`} onClick={() => setClubsMode('table')}>Table</button>
+        <button className={`mode-btn ${clubsMode === 'chart' ? 'active' : ''}`} onClick={() => setClubsMode('chart')}>Chart</button>
+      </div>
+
+      {clubsMode === 'chart' && (
+        <div className="chart-card">
+          <h3 className="chart-title">Top 10 Clubs by Total Goals {clubLeague !== 'All' ? `· ${clubLeague}` : ''}</h3>
+          <ResponsiveContainer width="100%" height={360}>
+            <BarChart data={topClubsChartData} layout="vertical" margin={{ left: 10, right: 24, top: 4, bottom: 4 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#ddd6c4" horizontal={false} />
+              <XAxis type="number" tick={{ fontFamily: 'Space Mono, monospace', fontSize: 11, fill: '#5b6259' }} />
+              <YAxis type="category" dataKey="name" width={140} tick={{ fontFamily: 'Work Sans, sans-serif', fontSize: 12, fill: '#16201a' }} />
+              <Tooltip content={<ChartTooltip unit="goals" />} cursor={{ fill: 'rgba(27,67,50,0.08)' }} />
+              <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                {topClubsChartData.map((entry, idx) => (
+                  <Cell key={idx} fill={idx === topClubsChartData.length - 1 ? '#e8a13a' : '#1b4332'} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {clubsMode === 'table' && (
       <div className="table-wrap">
         <table>
           <thead>
@@ -298,6 +382,7 @@ export default function App() {
           </tbody>
         </table>
       </div>
+      )}
       </>
       )}
 

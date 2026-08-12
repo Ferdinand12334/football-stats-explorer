@@ -191,6 +191,67 @@ select {
   color: var(--paper);
 }
 
+.mode-toggle {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.mode-btn {
+  padding: 6px 16px;
+  border-radius: 20px;
+  border: 1.5px solid var(--line);
+  background: var(--paper-card);
+  color: var(--ink-soft);
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.mode-btn.active {
+  background: var(--amber);
+  border-color: var(--amber);
+  color: var(--pitch-900);
+}
+
+.chart-card {
+  background: var(--paper-card);
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  padding: 20px 16px 8px;
+}
+
+.chart-title {
+  font-family: 'Work Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 10px 4px;
+}
+
+.chart-tooltip {
+  background: var(--pitch-900);
+  color: var(--paper);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-family: 'Work Sans', sans-serif;
+}
+
+.chart-tooltip-name {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.chart-tooltip-value {
+  font-family: 'Space Mono', monospace;
+  color: var(--amber);
+  font-size: 13px;
+  margin-top: 2px;
+}
+
 /* ---------- Table: scoreboard sheet ---------- */
 
 .table-wrap {
