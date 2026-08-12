@@ -82,6 +82,8 @@ export default function App() {
   const [clubsMode, setClubsMode] = useState('table');
   const [chartStat, setChartStat] = useState('Goals');
   const [clubChartStat, setClubChartStat] = useState('goals');
+  const [favorites, setFavorites] = useState([]);
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
 
   const leagues = useMemo(() => uniqueSorted(players.map(p => p.Comp)), []);
   const positions = useMemo(() => uniqueSorted(players.map(p => p.Pos)), []);
@@ -99,6 +101,7 @@ export default function App() {
     }
     if (league !== 'All') result = result.filter(p => p.Comp === league);
     if (position !== 'All') result = result.filter(p => p.Pos === position);
+    if (favoritesOnly) result = result.filter(p => favorites.includes(favKey(p)));
 
     result = [...result].sort((a, b) => {
       const av = a[sortKey];
@@ -110,7 +113,7 @@ export default function App() {
     });
 
     return result;
-  }, [search, league, position, sortKey, sortDir]);
+  }, [search, league, position, sortKey, sortDir, favoritesOnly, favorites]);
 
   const handleSort = key => {
     if (sortKey === key) {
@@ -133,6 +136,16 @@ export default function App() {
 
   const isComparing = player =>
     compareList.some(p => p.Player === player.Player && p.Squad === player.Squad);
+
+  const favKey = p => `${p.Player}__${p.Squad}`;
+
+  const toggleFavorite = (player, e) => {
+    if (e) e.stopPropagation();
+    const key = favKey(player);
+    setFavorites(list => (list.includes(key) ? list.filter(k => k !== key) : [...list, key]));
+  };
+
+  const isFavorite = player => favorites.includes(favKey(player));
 
   const clubStandings = useMemo(() => buildClubStandings(players), []);
 
@@ -239,6 +252,13 @@ export default function App() {
             <option key={p} value={p}>{p}</option>
           ))}
         </select>
+        <button
+          className={`fav-toggle ${favoritesOnly ? 'active' : ''}`}
+          onClick={() => setFavoritesOnly(v => !v)}
+          disabled={favorites.length === 0 && !favoritesOnly}
+        >
+          ★ Favorites {favorites.length > 0 ? `(${favorites.length})` : ''}
+        </button>
       </div>
 
       <p className="result-count">{filtered.length.toLocaleString()} players found</p>
@@ -280,6 +300,7 @@ export default function App() {
           <thead>
             <tr>
               <th className="checkbox-col"></th>
+              <th className="fav-col"></th>
               <th className="sticky-col" onClick={() => handleSort('Player')}>
                 Player {sortKey === 'Player' && (sortDir === 'asc' ? '▲' : '▼')}
               </th>
@@ -303,6 +324,9 @@ export default function App() {
                     onChange={e => toggleCompare(p, e)}
                     aria-label={`Compare ${p.Player}`}
                   />
+                </td>
+                <td className="fav-col" onClick={e => toggleFavorite(p, e)}>
+                  <span className={`fav-star ${isFavorite(p) ? 'fav-active' : ''}`}>{isFavorite(p) ? '★' : '☆'}</span>
                 </td>
                 <td className="sticky-col player-name">{p.Player}</td>
                 <td>{p.Squad}</td>
@@ -427,6 +451,9 @@ export default function App() {
         <div className="modal-backdrop" onClick={() => setSelectedPlayer(null)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <button className="modal-close" onClick={() => setSelectedPlayer(null)}>✕</button>
+            <button className="modal-fav" onClick={e => toggleFavorite(selectedPlayer, e)}>
+              {isFavorite(selectedPlayer) ? '★' : '☆'}
+            </button>
             <div className="modal-banner">
               <span className={`pos-badge pos-${positionGroup(selectedPlayer.Pos)} modal-pos`}>{selectedPlayer.Pos}</span>
               <span className="modal-number">{selectedPlayer.Goals}</span>
