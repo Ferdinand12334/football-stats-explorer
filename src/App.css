@@ -232,6 +232,31 @@ select {
   margin: 0 0 10px 4px;
 }
 
+.chart-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.chart-header-row .chart-title {
+  margin: 0 0 10px 4px;
+  flex: 1;
+  min-width: 180px;
+}
+
+.chart-stat-select {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1.5px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+
 .chart-tooltip {
   background: var(--pitch-900);
   color: var(--paper);

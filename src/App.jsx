@@ -80,6 +80,8 @@ export default function App() {
   const [clubLeague, setClubLeague] = useState('All');
   const [playersMode, setPlayersMode] = useState('table'); // 'table' | 'chart'
   const [clubsMode, setClubsMode] = useState('table');
+  const [chartStat, setChartStat] = useState('Goals');
+  const [clubChartStat, setClubChartStat] = useState('goals');
 
   const leagues = useMemo(() => uniqueSorted(players.map(p => p.Comp)), []);
   const positions = useMemo(() => uniqueSorted(players.map(p => p.Pos)), []);
@@ -157,23 +159,23 @@ export default function App() {
     }
   };
 
-  // Top 10 by Goals within the current player filters, for the chart view.
+  // Top 10 within the current player filters, for the chart view — by whichever stat is selected.
   const topScorersChartData = useMemo(() => {
     return [...filtered]
-      .sort((a, b) => b.Goals - a.Goals)
+      .sort((a, b) => (b[chartStat] || 0) - (a[chartStat] || 0))
       .slice(0, 10)
-      .map(p => ({ name: p.Player, value: p.Goals, pos: p.Pos }))
+      .map(p => ({ name: p.Player, value: p[chartStat] || 0, pos: p.Pos }))
       .reverse(); // so highest ends up at top of horizontal bar chart
-  }, [filtered]);
+  }, [filtered, chartStat]);
 
-  // Top 10 clubs by total goals within the current club filter, for the chart view.
+  // Top 10 clubs within the current club filter, for the chart view — by whichever stat is selected.
   const topClubsChartData = useMemo(() => {
     return [...filteredClubs]
-      .sort((a, b) => b.goals - a.goals)
+      .sort((a, b) => (b[clubChartStat] || 0) - (a[clubChartStat] || 0))
       .slice(0, 10)
-      .map(c => ({ name: c.Squad, value: c.goals }))
+      .map(c => ({ name: c.Squad, value: c[clubChartStat] || 0 }))
       .reverse();
-  }, [filteredClubs]);
+  }, [filteredClubs, clubChartStat]);
 
   function ChartTooltip({ active, payload, label, unit }) {
     if (!active || !payload || !payload.length) return null;
@@ -248,13 +250,20 @@ export default function App() {
 
       {playersMode === 'chart' && (
         <div className="chart-card">
-          <h3 className="chart-title">Top 10 Scorers {league !== 'All' ? `· ${league}` : ''}{position !== 'All' ? ` · ${position}` : ''}</h3>
+          <div className="chart-header-row">
+            <h3 className="chart-title">Top 10 by {STAT_COLUMNS.find(c => c.key === chartStat)?.label} {league !== 'All' ? `· ${league}` : ''}{position !== 'All' ? ` · ${position}` : ''}</h3>
+            <select className="chart-stat-select" value={chartStat} onChange={e => setChartStat(e.target.value)}>
+              {STAT_COLUMNS.map(col => (
+                <option key={col.key} value={col.key}>{col.label}</option>
+              ))}
+            </select>
+          </div>
           <ResponsiveContainer width="100%" height={360}>
             <BarChart data={topScorersChartData} layout="vertical" margin={{ left: 10, right: 24, top: 4, bottom: 4 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#ddd6c4" horizontal={false} />
               <XAxis type="number" tick={{ fontFamily: 'Space Mono, monospace', fontSize: 11, fill: '#5b6259' }} />
               <YAxis type="category" dataKey="name" width={130} tick={{ fontFamily: 'Work Sans, sans-serif', fontSize: 12, fill: '#16201a' }} />
-              <Tooltip content={<ChartTooltip unit="goals" />} cursor={{ fill: 'rgba(27,67,50,0.08)' }} />
+              <Tooltip content={<ChartTooltip unit={STAT_COLUMNS.find(c => c.key === chartStat)?.label.toLowerCase()} />} cursor={{ fill: 'rgba(27,67,50,0.08)' }} />
               <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                 {topScorersChartData.map((entry, idx) => (
                   <Cell key={idx} fill={idx === topScorersChartData.length - 1 ? '#e8a13a' : '#2d6a4f'} />
@@ -334,13 +343,20 @@ export default function App() {
 
       {clubsMode === 'chart' && (
         <div className="chart-card">
-          <h3 className="chart-title">Top 10 Clubs by Total Goals {clubLeague !== 'All' ? `· ${clubLeague}` : ''}</h3>
+          <div className="chart-header-row">
+            <h3 className="chart-title">Top 10 Clubs by {CLUB_STAT_COLUMNS.find(c => c.key === clubChartStat)?.label} {clubLeague !== 'All' ? `· ${clubLeague}` : ''}</h3>
+            <select className="chart-stat-select" value={clubChartStat} onChange={e => setClubChartStat(e.target.value)}>
+              {CLUB_STAT_COLUMNS.map(col => (
+                <option key={col.key} value={col.key}>{col.label}</option>
+              ))}
+            </select>
+          </div>
           <ResponsiveContainer width="100%" height={360}>
             <BarChart data={topClubsChartData} layout="vertical" margin={{ left: 10, right: 24, top: 4, bottom: 4 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#ddd6c4" horizontal={false} />
               <XAxis type="number" tick={{ fontFamily: 'Space Mono, monospace', fontSize: 11, fill: '#5b6259' }} />
               <YAxis type="category" dataKey="name" width={140} tick={{ fontFamily: 'Work Sans, sans-serif', fontSize: 12, fill: '#16201a' }} />
-              <Tooltip content={<ChartTooltip unit="goals" />} cursor={{ fill: 'rgba(27,67,50,0.08)' }} />
+              <Tooltip content={<ChartTooltip unit={CLUB_STAT_COLUMNS.find(c => c.key === clubChartStat)?.label.toLowerCase()} />} cursor={{ fill: 'rgba(27,67,50,0.08)' }} />
               <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                 {topClubsChartData.map((entry, idx) => (
                   <Cell key={idx} fill={idx === topClubsChartData.length - 1 ? '#e8a13a' : '#1b4332'} />
