@@ -39,6 +39,8 @@ export default function App() {
   const [sortKey, setSortKey] = useState('Goals');
   const [sortDir, setSortDir] = useState('desc');
   const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [compareList, setCompareList] = useState([]);
+  const [showCompare, setShowCompare] = useState(false);
 
   const leagues = useMemo(() => uniqueSorted(players.map(p => p.Comp)), []);
   const positions = useMemo(() => uniqueSorted(players.map(p => p.Pos)), []);
@@ -77,6 +79,19 @@ export default function App() {
       setSortDir('desc');
     }
   };
+
+  const toggleCompare = (player, e) => {
+    e.stopPropagation();
+    setCompareList(list => {
+      const already = list.find(p => p.Player === player.Player && p.Squad === player.Squad);
+      if (already) return list.filter(p => p !== already);
+      if (list.length >= 2) return [list[1], player]; // keep most recent 2
+      return [...list, player];
+    });
+  };
+
+  const isComparing = player =>
+    compareList.some(p => p.Player === player.Player && p.Squad === player.Squad);
 
   return (
     <div className="app">
@@ -131,6 +146,7 @@ export default function App() {
         <table>
           <thead>
             <tr>
+              <th className="checkbox-col"></th>
               <th className="sticky-col" onClick={() => handleSort('Player')}>
                 Player {sortKey === 'Player' && (sortDir === 'asc' ? '▲' : '▼')}
               </th>
@@ -147,6 +163,14 @@ export default function App() {
           <tbody>
             {filtered.slice(0, 200).map((p, i) => (
               <tr key={i} onClick={() => setSelectedPlayer(p)} className="row">
+                <td className="checkbox-col" onClick={e => e.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    checked={isComparing(p)}
+                    onChange={e => toggleCompare(p, e)}
+                    aria-label={`Compare ${p.Player}`}
+                  />
+                </td>
                 <td className="sticky-col player-name">{p.Player}</td>
                 <td>{p.Squad}</td>
                 <td>{p.Comp}</td>
@@ -167,6 +191,23 @@ export default function App() {
         Built by <span className="footer-name">CLARCK</span> · Data: FBref, 2025–26 season
       </footer>
 
+      {compareList.length > 0 && !showCompare && (
+        <div className="compare-bar">
+          <div className="compare-bar-names">
+            {compareList.map(p => (
+              <span key={p.Player} className="compare-chip">
+                {p.Player}
+                <button onClick={() => setCompareList(list => list.filter(x => x !== p))}>✕</button>
+              </span>
+            ))}
+            {compareList.length < 2 && <span className="compare-hint">Select {2 - compareList.length} more player{2 - compareList.length > 1 ? 's' : ''} to compare</span>}
+          </div>
+          {compareList.length === 2 && (
+            <button className="compare-go" onClick={() => setShowCompare(true)}>Compare →</button>
+          )}
+        </div>
+      )}
+
       {selectedPlayer && (
         <div className="modal-backdrop" onClick={() => setSelectedPlayer(null)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
@@ -184,6 +225,38 @@ export default function App() {
                   <div className="stat-label">{col.label}</div>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCompare && compareList.length === 2 && (
+        <div className="modal-backdrop" onClick={() => setShowCompare(false)}>
+          <div className="modal compare-modal" onClick={e => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setShowCompare(false)}>✕</button>
+            <div className="compare-header">
+              <div className="compare-player-name">{compareList[0].Player}</div>
+              <div className="compare-vs">VS</div>
+              <div className="compare-player-name">{compareList[1].Player}</div>
+            </div>
+            <div className="compare-sub">
+              <span>{compareList[0].Squad} · {compareList[0].Comp}</span>
+              <span>{compareList[1].Squad} · {compareList[1].Comp}</span>
+            </div>
+            <div className="compare-rows">
+              {STAT_COLUMNS.map(col => {
+                const a = compareList[0][col.key];
+                const b = compareList[1][col.key];
+                const aWins = a > b;
+                const bWins = b > a;
+                return (
+                  <div key={col.key} className="compare-row">
+                    <span className={`compare-value ${aWins ? 'compare-win' : ''}`}>{a}</span>
+                    <span className="compare-label">{col.label}</span>
+                    <span className={`compare-value ${bWins ? 'compare-win' : ''}`}>{b}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
