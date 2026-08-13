@@ -137,6 +137,11 @@ body {
   flex-direction: column;
   align-items: center;
   min-width: 70px;
+  transition: transform 0.15s ease;
+}
+
+.header-stat:hover {
+  transform: translateY(-2px);
 }
 
 .header-stat-value {
@@ -144,6 +149,11 @@ body {
   font-weight: 700;
   font-size: 22px;
   color: var(--amber);
+  transition: text-shadow 0.15s ease;
+}
+
+.header-stat:hover .header-stat-value {
+  text-shadow: 0 0 14px rgba(232, 161, 58, 0.5);
 }
 
 .header-stat-label {
@@ -217,6 +227,11 @@ select {
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+}
+
+.view-tab:active, .mode-btn:active, .fav-toggle:active {
+  transform: scale(0.96);
 }
 
 .view-tab.active {
@@ -243,6 +258,7 @@ select {
   letter-spacing: 0.03em;
   text-transform: uppercase;
   cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
 }
 
 .mode-btn.active {
@@ -256,6 +272,12 @@ select {
   border: 1.5px solid var(--line);
   border-radius: 10px;
   padding: 20px 16px 8px;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .chart-title {
@@ -318,6 +340,7 @@ select {
   border: 1.5px solid var(--line);
   border-radius: 6px;
   background: var(--paper-card);
+  animation: fadeIn 0.25s ease;
 }
 
 table {
@@ -380,11 +403,15 @@ td:first-child, td:nth-child(2), td:nth-child(3) {
 
 .row {
   cursor: pointer;
-  transition: background 0.1s;
+  transition: background 0.15s ease, transform 0.1s ease;
 }
 
 .row:hover {
   background: var(--hover-bg);
+}
+
+.row:active {
+  transform: scale(0.997);
 }
 
 .truncated-note {
@@ -443,6 +470,11 @@ td:first-child, td:nth-child(2), td:nth-child(3) {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.03em;
+  transition: transform 0.12s ease;
+}
+
+.row:hover .pos-badge {
+  transform: scale(1.06);
 }
 
 .pos-fw { background: #f4d4c8; color: #a13a1c; }
@@ -462,6 +494,7 @@ td:first-child, td:nth-child(2), td:nth-child(3) {
   justify-content: center;
   padding: 20px;
   z-index: 10;
+  animation: backdropIn 0.15s ease;
 }
 
 .modal {
@@ -472,6 +505,17 @@ td:first-child, td:nth-child(2), td:nth-child(3) {
   max-width: 480px;
   width: 100%;
   position: relative;
+  animation: modalIn 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+@keyframes backdropIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.94) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 .modal-close {
@@ -661,6 +705,12 @@ td:first-child, td:nth-child(2), td:nth-child(3) {
   gap: 16px;
   z-index: 8;
   flex-wrap: wrap;
+  animation: slideUp 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.1);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
 }
 
 .compare-bar-names {
