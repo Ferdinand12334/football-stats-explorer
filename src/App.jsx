@@ -73,6 +73,57 @@ function positionGroup(pos) {
   return 'unknown';
 }
 
+// Generates a small, consistent "crest" for clubs without needing real logo
+// images — initials plus a deterministic color from the club name itself,
+// so the same club always gets the same badge across the whole app.
+const CLUB_BADGE_PALETTE = ['#1b4332', '#2d6a4f', '#c4791f', '#a13a1c', '#1e4d70', '#6b4c9a', '#8a6d3b', '#3d5a80'];
+
+function clubInitials(name) {
+  if (!name) return '?';
+  const words = name.split(' ').filter(Boolean);
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return (words[0][0] + words[1][0]).toUpperCase();
+}
+
+function clubColor(name) {
+  if (!name) return CLUB_BADGE_PALETTE[0];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return CLUB_BADGE_PALETTE[Math.abs(hash) % CLUB_BADGE_PALETTE.length];
+}
+
+function ClubBadge({ name }) {
+  return (
+    <span className="club-badge" style={{ backgroundColor: clubColor(name) }}>
+      {clubInitials(name)}
+    </span>
+  );
+}
+
+// Flag lookup for the nationality codes present in the dataset (FBref-style
+// 3-letter codes). Falls back to a plain globe if a code isn't mapped.
+const NATION_FLAGS = {
+  ENG: '🏴', SCO: '🏴', WAL: '🏴', NIR: '🇬🇧', IRL: '🇮🇪',
+  FRA: '🇫🇷', ESP: '🇪🇸', GER: '🇩🇪', ITA: '🇮🇹', POR: '🇵🇹',
+  NED: '🇳🇱', BEL: '🇧🇪', SUI: '🇨🇭', AUT: '🇦🇹', DEN: '🇩🇰',
+  SWE: '🇸🇪', NOR: '🇳🇴', POL: '🇵🇱', TUR: '🇹🇷', GRE: '🇬🇷',
+  CRO: '🇭🇷', SRB: '🇷🇸', ROU: '🇷🇴', CZE: '🇨🇿', SVK: '🇸🇰',
+  SVN: '🇸🇮', BIH: '🇧🇦', ALB: '🇦🇱', KVX: '🇽🇰', ISL: '🇮🇸',
+  FIN: '🇫🇮', RUS: '🇷🇺', UKR: '🇺🇦', HUN: '🇭🇺', GEO: '🇬🇪',
+  ISR: '🇮🇱', BRA: '🇧🇷', ARG: '🇦🇷', URU: '🇺🇾', COL: '🇨🇴',
+  ECU: '🇪🇨', PAR: '🇵🇾', CHI: '🇨🇱', VEN: '🇻🇪', PER: '🇵🇪',
+  USA: '🇺🇸', MEX: '🇲🇽', CAN: '🇨🇦', JAM: '🇯🇲', CRC: '🇨🇷',
+  JPN: '🇯🇵', KOR: '🇰🇷', AUS: '🇦🇺', CHN: '🇨🇳',
+  SEN: '🇸🇳', CIV: '🇨🇮', GHA: '🇬🇭', NGA: '🇳🇬', CMR: '🇨🇲',
+  MAR: '🇲🇦', ALG: '🇩🇿', TUN: '🇹🇳', EGY: '🇪🇬', MLI: '🇲🇱',
+  GAM: '🇬🇲', GAB: '🇬🇦', GUI: '🇬🇳', BFA: '🇧🇫', ZAM: '🇿🇲',
+  RSA: '🇿🇦', TOG: '🇹🇬', BEN: '🇧🇯', ANG: '🇦🇴', COD: '🇨🇩',
+};
+
+function nationFlag(code) {
+  return NATION_FLAGS[code] || '🌍';
+}
+
 export default function App() {
   const [search, setSearch] = useState('');
   const [league, setLeague] = useState('All');
@@ -370,7 +421,7 @@ export default function App() {
                   <span className={`fav-star ${isFavorite(p) ? 'fav-active' : ''}`}>{isFavorite(p) ? '★' : '☆'}</span>
                 </td>
                 <td className="sticky-col player-name">{p.Player}</td>
-                <td>{p.Squad}</td>
+                <td><ClubBadge name={p.Squad} /> {p.Squad}</td>
                 <td>{p.Comp}</td>
                 <td><span className={`pos-badge pos-${positionGroup(p.Pos)}`}>{p.Pos}</span></td>
                 {STAT_COLUMNS.map(col => (
@@ -457,7 +508,7 @@ export default function App() {
           <tbody>
             {filteredClubs.map((c, i) => (
               <tr key={i} className="row">
-                <td className="sticky-col player-name">{c.Squad}</td>
+                <td className="sticky-col player-name"><ClubBadge name={c.Squad} /> {c.Squad}</td>
                 <td>{c.Comp}</td>
                 {CLUB_STAT_COLUMNS.map(col => (
                   <td key={col.key}>{c[col.key]}</td>
@@ -504,7 +555,7 @@ export default function App() {
               <span className="modal-number">{selectedPlayer.Goals}</span>
             </div>
             <h2>{selectedPlayer.Player}</h2>
-            <p className="modal-sub">{selectedPlayer.Squad} · {selectedPlayer.Comp} · {selectedPlayer.Nation}</p>
+            <p className="modal-sub">{selectedPlayer.Squad} · {selectedPlayer.Comp} · {nationFlag(selectedPlayer.Nation)} {selectedPlayer.Nation}</p>
             <div className="stat-grid">
               {STAT_COLUMNS.map(col => (
                 <div key={col.key} className="stat-box">
@@ -527,8 +578,8 @@ export default function App() {
               <div className="compare-player-name">{compareList[1].Player}</div>
             </div>
             <div className="compare-sub">
-              <span>{compareList[0].Squad} · {compareList[0].Comp}</span>
-              <span>{compareList[1].Squad} · {compareList[1].Comp}</span>
+              <span>{compareList[0].Squad} · {nationFlag(compareList[0].Nation)} {compareList[0].Nation}</span>
+              <span>{compareList[1].Squad} · {nationFlag(compareList[1].Nation)} {compareList[1].Nation}</span>
             </div>
             <div className="compare-rows">
               {STAT_COLUMNS.map(col => {

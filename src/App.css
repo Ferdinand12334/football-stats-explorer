@@ -401,6 +401,22 @@ td:first-child, td:nth-child(2), td:nth-child(3) {
   font-weight: 600;
 }
 
+.club-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  color: #f7f4ec;
+  font-family: 'Space Mono', monospace;
+  font-size: 8px;
+  font-weight: 700;
+  vertical-align: middle;
+  margin-right: 5px;
+  line-height: 1;
+}
+
 .row {
   cursor: pointer;
   transition: background 0.15s ease, transform 0.1s ease;
